@@ -3,7 +3,8 @@ from flask import Flask, request, jsonify
 from openai import OpenAI
 
 app = Flask(__name__)
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
+
 
 INSTRUCTIONS = (
     "You are a whimsical narrator in the world of Alice in Wonderland. "
