@@ -1,9 +1,7 @@
 import os, base64, json
 from flask import Flask, request, jsonify
 from openai import OpenAI
-client = OpenAI(api_key=key)
 
-# 1️⃣ CREATE app FIRST
 app = Flask(__name__)
 
 INSTRUCTIONS = (
@@ -12,79 +10,62 @@ INSTRUCTIONS = (
     "Return ONLY valid JSON with keys: title, story. "
     "Story length 120–200 words, include one short line of dialogue."
 )
-@app.get("/versions")
-def versions():
-    import openai
-    return {"openai_version": getattr(openai, "__version__", "unknown")}
 
 def get_client():
     key = os.getenv("OPENAI_API_KEY", "")
-    key = key.strip().strip('"').strip("'")  # ✅ removes whitespace and quotes
+    key = key.strip().strip('"').strip("'")
     if not key:
         return None
     return OpenAI(api_key=key)
 
-# 2️⃣ Routes come AFTER app is defined
 @app.get("/")
 def health():
     return "ok", 200
-
-@app.get("/envcheck")
-def envcheck():
-    return {
-        "has_key": bool(os.getenv("OPENAI_API_KEY")),
-        "key_length": len(os.getenv("OPENAI_API_KEY", "")),
-        "python_version": os.sys.version
-    }
-
-
-
-# ...
-resp = client.chat.completions.create(
-    model="gpt-4.1-mini",
-    messages=[
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": INSTRUCTIONS + "\nReturn JSON only."},
-                {"type": "image_url", "image_url": {"url": data_url}},
-            ],
-        }
-    ],
-)
-
-text = resp.choices[0].message.content.strip()
-
-
 
 @app.post("/analyze")
 def analyze():
     client = get_client()
     if client is None:
-        return jsonify({"title": "Config error", "story": "OPENAI_API_KEY not set"}), 500
+        return jsonify({
+            "title": "Config error",
+            "story": "OPENAI_API_KEY not set"
+        }), 500
 
     jpg = request.data
     if not jpg:
-        return jsonify({"title": "Error", "story": "No image received"}), 400
+        return jsonify({
+            "title": "Error",
+            "story": "No image received"
+        }), 400
 
     b64 = base64.b64encode(jpg).decode("utf-8")
     data_url = f"data:image/jpeg;base64,{b64}"
 
     try:
-        r = client.responses.create(
+        response = client.chat.completions.create(
             model="gpt-4.1-mini",
-            instructions=INSTRUCTIONS,
-            input=[{
-                "role": "user",
-                "content": [
-                    {"type": "input_image", "image_url": data_url},
-                    {"type": "input_text", "text": "Respond with JSON only"}
-                ]
-            }]
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": INSTRUCTIONS + "\nRespond with JSON only."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": data_url}
+                        }
+                    ]
+                }
+            ]
         )
-        text = r.output_text.strip()
-        return jsonify(json.loads(text))
-    except Exception as e:
-        # ✅ this is the money line: you'll see the actual reason
-        return jsonify({"title": "Server error", "story": str(e)}), 500
 
+        text = (response.choices[0].message.content or "").strip()
+        return jsonify(json.loads(text))
+
+    except Exception as e:
+        return jsonify({
+            "title": "Server error",
+            "story": str(e)
+        }), 500
