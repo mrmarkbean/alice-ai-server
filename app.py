@@ -2,6 +2,10 @@ import os, base64, json
 from flask import Flask, request, jsonify
 from openai import OpenAI
 
+@app.get("/")
+def health():
+    return "ok", 200
+
 app = Flask(__name__)
 
 INSTRUCTIONS = (
