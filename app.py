@@ -11,6 +11,10 @@ INSTRUCTIONS = (
     "Return ONLY valid JSON with keys: title, story. "
     "Story length 120–200 words, include one short line of dialogue."
 )
+@app.get("/versions")
+def versions():
+    import openai
+    return {"openai_version": getattr(openai, "__version__", "unknown")}
 
 def get_client():
     key = os.getenv("OPENAI_API_KEY", "")
