@@ -13,7 +13,8 @@ INSTRUCTIONS = (
 )
 
 def get_client():
-    key = os.getenv("OPENAI_API_KEY")
+    key = os.getenv("OPENAI_API_KEY", "")
+    key = key.strip().strip('"').strip("'")  # ✅ removes whitespace and quotes
     if not key:
         return None
     return OpenAI(api_key=key)
