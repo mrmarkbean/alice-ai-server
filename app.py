@@ -2,18 +2,7 @@ import os, base64, json
 from flask import Flask, request, jsonify
 from openai import OpenAI
 
-@app.get("/")
-def health():
-    return "ok", 200
-
-@app.get("/envcheck")
-def envcheck():
-    return {
-        "has_key": bool(os.getenv("OPENAI_API_KEY")),
-        "key_length": len(os.getenv("OPENAI_API_KEY", "")),
-        "python_version": os.sys.version
-    }
-
+# 1️⃣ CREATE app FIRST
 app = Flask(__name__)
 
 INSTRUCTIONS = (
@@ -29,9 +18,18 @@ def get_client():
         return None
     return OpenAI(api_key=key)
 
+# 2️⃣ Routes come AFTER app is defined
 @app.get("/")
 def health():
     return "ok", 200
+
+@app.get("/envcheck")
+def envcheck():
+    return {
+        "has_key": bool(os.getenv("OPENAI_API_KEY")),
+        "key_length": len(os.getenv("OPENAI_API_KEY", "")),
+        "python_version": os.sys.version
+    }
 
 @app.post("/analyze")
 def analyze():
