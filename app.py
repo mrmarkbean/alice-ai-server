@@ -36,10 +36,7 @@ def envcheck():
 def analyze():
     client = get_client()
     if client is None:
-        return jsonify({
-            "title": "Config error",
-            "story": "OPENAI_API_KEY not set"
-        }), 500
+        return jsonify({"title": "Config error", "story": "OPENAI_API_KEY not set"}), 500
 
     jpg = request.data
     if not jpg:
@@ -48,20 +45,21 @@ def analyze():
     b64 = base64.b64encode(jpg).decode("utf-8")
     data_url = f"data:image/jpeg;base64,{b64}"
 
-    r = client.responses.create(
-        model="gpt-4.1-mini",
-        instructions=INSTRUCTIONS,
-        input=[{
-            "role": "user",
-            "content": [
-                {"type": "input_image", "image_url": data_url},
-                {"type": "input_text", "text": "Respond with JSON only"}
-            ]
-        }]
-    )
-
-    text = r.output_text.strip()
     try:
+        r = client.responses.create(
+            model="gpt-4.1-mini",
+            instructions=INSTRUCTIONS,
+            input=[{
+                "role": "user",
+                "content": [
+                    {"type": "input_image", "image_url": data_url},
+                    {"type": "input_text", "text": "Respond with JSON only"}
+                ]
+            }]
+        )
+        text = r.output_text.strip()
         return jsonify(json.loads(text))
-    except Exception:
-        return jsonify({"title": "Parser error", "story": text})
+    except Exception as e:
+        # ✅ this is the money line: you'll see the actual reason
+        return jsonify({"title": "Server error", "story": str(e)}), 500
+
