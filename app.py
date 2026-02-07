@@ -1,6 +1,7 @@
 import os, base64, json
 from flask import Flask, request, jsonify
 from openai import OpenAI
+client = OpenAI(api_key=key)
 
 # 1️⃣ CREATE app FIRST
 app = Flask(__name__)
@@ -35,6 +36,26 @@ def envcheck():
         "key_length": len(os.getenv("OPENAI_API_KEY", "")),
         "python_version": os.sys.version
     }
+
+
+
+# ...
+resp = client.chat.completions.create(
+    model="gpt-4.1-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": INSTRUCTIONS + "\nReturn JSON only."},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ],
+        }
+    ],
+)
+
+text = resp.choices[0].message.content.strip()
+
+
 
 @app.post("/analyze")
 def analyze():
